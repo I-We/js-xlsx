@@ -11405,11 +11405,30 @@ function readFileSync(data, opts) {
 function write_zip_type(wb, opts) {
 	var o = opts||{};
 	var z = write_zip(wb, o);
+  switch(opts.type) {
+      case "base64": o.type = "base64"; if (typeof opts.compression === 'string') {o.compression = opts.compression;} break;
+      case "binary": o.type = "string"; if (typeof opts.compression === 'string') {o.compression = opts.compression;} break;
+      case "buffer": o.type = "nodebuffer"; if (typeof opts.compression === 'string') {o.compression = opts.compression;} break;
+      case "file": o.type = "nodebuffer"; if (typeof opts.compression === 'string') {o.compression = opts.compression;} break;
+      default: throw new Error("Unrecognized type " + opts.type);
+  }
+
+  if(opts.type === "file") {
+      return _fs.writeFileSync(opts.file, z.generate(o));
+  }
+  else {
+      return z.generate(o);
+  }
+}
+
+function write_zip_type_async(wb, opts) {
+	var o = opts||{};
+	var z = write_zip(wb, o);
 	switch(o.type) {
-		case "base64": return z.generate({type:"base64"});
-		case "binary": return z.generate({type:"string"});
-		case "buffer": return z.generate({type:"nodebuffer"});
-		case "file": return _fs.writeFileSync(o.file, z.generate({type:"nodebuffer"}));
+		case "base64": return z.generateAsync({type:"base64"});
+		case "binary": return z.generateAsync({type:"string"});
+		case "buffer": return z.generateAsync({type:"nodebuffer"});
+		case "file": return _fs.writeFile(o.file, z.generateAsync({type:"nodebuffer"}));
 		default: throw new Error("Unrecognized type " + o.type);
 	}
 }
@@ -11419,6 +11438,14 @@ function writeSync(wb, opts) {
 	switch(o.bookType) {
 		case 'xml': return write_xlml(wb, o);
 		default: return write_zip_type(wb, o);
+	}
+}
+
+function writeAsync(wb, opts) {
+	var o = opts||{};
+	switch(o.bookType) {
+		case 'xml': return write_xlml(wb, o);
+		default: return write_zip_type_async(wb, o);
 	}
 }
 
@@ -11645,6 +11672,7 @@ XLSX.read = readSync; //xlsread
 XLSX.readFile = readFileSync; //readFile
 XLSX.readFileSync = readFileSync;
 XLSX.write = writeSync;
+XLSX.writeAsync = writeAsync;
 XLSX.writeFile = writeFileSync;
 XLSX.writeFileSync = writeFileSync;
 XLSX.utils = utils;
